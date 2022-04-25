@@ -1,6 +1,6 @@
 # reader.py
 Read  Multicast, Http(s) and Udp Streams as Files. 
-```
+```smalltalk
    
     reader returns an open file handle.
 
@@ -12,6 +12,8 @@ Read  Multicast, Http(s) and Udp Streams as Files.
 
 
     Use like:
+
+   from reader import reader
 
     with reader("udp://@227.1.3.10:4310") as data:
         data.read(8192)
