@@ -4,13 +4,14 @@ The reader function
 
 import socket
 import struct
+import sys
 import urllib.request
 
 
 def reader(uri):
     """
     reader returns an open file handle.
-
+    stdin:              cat video.ts | gumd
     files:              "/home/you/video.ts"
     http(s) urls:       "https://example.com/vid.ts"
     udp urls:           "udp://1.2.3.4:5555"
@@ -33,12 +34,15 @@ def reader(uri):
 
 
     """
+    # read from stdin
+    if uri in [None, sys.stdin.buffer]:
+        return sys.stdin.buffer
     # Multicast
     if uri.startswith("udp://@"):
-        return open_mcast(uri)
+        return _open_mcast(uri)
     # Udp
     if uri.startswith("udp://"):
-        return open_udp(uri)
+        return _open_udp(uri)
     # Http(s)
     if uri.startswith("http"):
         return urllib.request.urlopen(uri)
@@ -46,7 +50,7 @@ def reader(uri):
     return open(uri, "rb")
 
 
-def read_stream(sock):
+def _read_stream(sock):
     """
     return a socket that can be read like a file.
     """
@@ -69,8 +73,7 @@ def _mk_mcast_sock(mcast_grp, mcast_port, all_grps=True):
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    # Big. Fat. Buffer of Doom. 
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 5000000)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 540000)
 
     if all_grps:
         sock.bind(("", mcast_port))
@@ -81,21 +84,21 @@ def _mk_mcast_sock(mcast_grp, mcast_port, all_grps=True):
     return sock
 
 
-def open_udp(uri):
+def _open_udp(uri):
     """
     udp://1.2.3.4:5555
     """
     udp_ip, udp_port = (uri.split("udp://")[1]).split(":")
     udp_port = int(udp_port)
     udp_sock = _mk_udp_sock(udp_ip, udp_port)
-    return read_stream(udp_sock)
+    return _read_stream(udp_sock)
 
 
-def open_mcast(uri):
+def _open_mcast(uri):
     """
     udp://@227.1.3.10:4310
     """
     mcast_grp, mcast_port = (uri.split("udp://@")[1]).split(":")
     mcast_port = int(mcast_port)
     mcast_sock = _mk_mcast_sock(mcast_grp, mcast_port)
-    return read_stream(mcast_sock)
+    return _read_stream(mcast_sock)
