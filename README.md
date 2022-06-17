@@ -1,5 +1,5 @@
 # reader.py
-Read  Multicast, Http(s) and Udp Streams as Files. 
+Read  Multicast, HTTP(S) and UDP Streams as Files. 
 ```smalltalk
    
    reader returns an open file handle.
